@@ -6,41 +6,41 @@ type concreteWatcher struct {
 	paths, files, commands []string
 }
 
-func (cw *concreteWatcher) SetCommands(c []string) { cw.commands = c }
-func (cw *concreteWatcher) SetFiles(f []string) error {
+func (c *concreteWatcher) SetCommands(cmds []string) { c.commands = cmds }
+func (c *concreteWatcher) SetFiles(f []string) error {
 	f, err := toAbs(f)
 	if err != nil {
 		return err
 	}
-	cw.files = f
+	c.files = f
 	return nil
 }
 
-func (cw *concreteWatcher) SetPaths(p []string) error {
+func (c *concreteWatcher) SetPaths(p []string) error {
 	p, err := toAbs(p)
 	if err != nil {
 		return err
 	}
-	cw.paths = p
+	c.paths = p
 	return nil
 }
 
-func (cw *concreteWatcher) Watch() error {
-	if err := Watch(cw.commands, cw.files, cw.paths); err != nil {
+func (c *concreteWatcher) Watch() error {
+	if err := Watch(c.commands, c.files, c.paths); err != nil {
 		return err
 	}
 	return nil
 }
 
 func toAbs(filePaths []string) ([]string, error) {
-	var absSlice []string
+	var absPaths []string
 	for _, f := range filePaths {
 		abs, err := filepath.Abs(f)
 		if err != nil {
 			return nil, err
 		}
-		absSlice = append(absSlice, abs)
+		absPaths = append(absPaths, abs)
 	}
 
-	return absSlice, nil
+	return absPaths, nil
 }
