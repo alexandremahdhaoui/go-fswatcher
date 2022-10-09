@@ -15,8 +15,8 @@ const RefractoryPeriod = 500 * time.Millisecond
 
 type Watcher interface {
 	SetCommands(c []string)
-	SetFiles(f []string)
-	SetPaths(p []string)
+	SetFiles(f []string) error
+	SetPaths(p []string) error
 	Watch() error
 }
 
@@ -52,7 +52,14 @@ func Execute(commands []string) {
 		split := strings.Split(c, " ")
 		name := split[0]
 		args := split[1:]
-		exec.Command(name, args...)
+
+		cmd := exec.Command(name, args...)
+		cmd.Stdout = os.Stdout
+		err := cmd.Run()
+
+		if err != nil {
+			_, _ = fmt.Fprint(os.Stderr, err)
+		}
 	}
 }
 
@@ -89,7 +96,7 @@ func ValidateFields(commands, files, paths []string) error {
 	if len(commands) == 0 {
 		return fmt.Errorf("should specified at least one `command` to execute on change")
 	}
-	if len(files) == 0 || len(paths) == 0 {
+	if len(files) == 0 && len(paths) == 0 {
 		return fmt.Errorf("should specify at least one `path` or `file` to watch")
 	}
 	return nil
@@ -100,13 +107,17 @@ func WatchLoop(commands, files, paths []string, w *fsnotify.Watcher) error {
 	var (
 		timer         = time.AfterFunc(math.MaxInt64, func() { Execute(commands) })
 		validateEvent = func(e fsnotify.Event) bool {
-			var valid bool
-			for _, f := range append(files, paths...) {
-				if f == e.Name {
-					valid = true
+			for _, f := range files {
+				if e.Name == f {
+					return true
 				}
 			}
-			return valid
+			for _, p := range paths {
+				if strings.HasPrefix(e.Name, p) {
+					return true
+				}
+			}
+			return false
 		}
 	)
 
@@ -117,14 +128,19 @@ func WatchLoop(commands, files, paths []string, w *fsnotify.Watcher) error {
 			if !ok {
 				return err
 			}
-		case event, ok := <-w.Events:
+		case e, ok := <-w.Events:
 			if !ok {
 				return nil
 			}
-
-			if !validateEvent(event) {
+			// discard event if it's not a Create or Write event
+			if !(e.Op == fsnotify.Create) && !(e.Op == fsnotify.Write) {
 				continue
 			}
+			// discard event if event is not validated.
+			if !validateEvent(e) {
+				continue
+			}
+
 			timer.Reset(RefractoryPeriod)
 		}
 	}
