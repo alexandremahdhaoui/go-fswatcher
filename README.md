@@ -16,3 +16,10 @@ Options:
 	-h	--help				print the helper.
 	-p	--path		[path]		path to a directory to watch.
 	-x	--execute	[command]	executable command.
+
+
+# Example
+
+```shell
+fsw -p . -x "echo some changes triggered this message"
+```
