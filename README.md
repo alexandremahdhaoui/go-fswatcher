@@ -5,6 +5,12 @@ execute specified commands on change.
 
 https://github.com/alexandre.mahdhaoui/go-fswatcher
 
+# Install
+
+```shell
+go install gitlab.com/alexandre.mahdhaoui/go-fswatcher/cmd/fsw@latest
+```
+
 Usage: 	
 ```shell
 fsw [options]
